@@ -70,10 +70,13 @@ func getTask(ctx iris.Context, tasksCollection *mgo.Collection) {
 	var numSkip = (pageIndex - 1) * pageSize
 
 	err = tasksCollection.Find(bson.M{}).Limit(pageSize).Skip(numSkip).All(&tasks)
+	var getTaskResult dto.GetTasksActionResult
 	if err != nil {
 		log.Fatal(err)
+		getTaskResult = dto.GetTasksActionResult{IsSucess: false, Message: err.Error()}
+	} else {
+		getTaskResult = dto.GetTasksActionResult{IsSucess: true, Message: "",
+			Tasks: tasks, NumOfPages: numOfPages, PageIndex: pageIndex}
 	}
-	var result = dto.ActionResult{true, ""}
-	var getTaskResult = dto.GetTasksActionResult{Result: &result, Tasks: tasks, NumOfPages: numOfPages, PageIndex: pageIndex}
 	ctx.JSON(getTaskResult)
 }

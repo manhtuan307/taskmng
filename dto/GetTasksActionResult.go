@@ -1,7 +1,8 @@
 package dto
 
 type GetTasksActionResult struct {
-	Result     *ActionResult
+	IsSucess   bool
+	Message    string
 	Tasks      []Task
 	NumOfPages int
 	PageIndex  int
