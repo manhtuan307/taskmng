@@ -13,9 +13,6 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-// PageSize is default number of records for paging
-const PageSize = 20
-
 func main() {
 	app := iris.New()
 	app.Use(logger.New())
