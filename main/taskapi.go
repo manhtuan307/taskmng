@@ -7,22 +7,18 @@ import (
 
 	"github.com/iris-contrib/middleware/cors"
 	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/middleware/logger"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
 
-const PAGE_SIZE = 20
+// PageSize is default number of records for paging
+const PageSize = 20
 
 func main() {
-	app := iris.Default()
+	app := iris.New()
 	app.Use(logger.New())
-
-	appCors := cors.New(cors.Options{
-		AllowCredentials: true,
-		AllowedOrigins:   []string{"*"},
-	})
-	app.Use(appCors)
 
 	// Database connection
 	session, err := mgo.Dial("localhost:27017")
@@ -34,17 +30,27 @@ func main() {
 
 	tasksCollection := session.DB("task_management").C("Task")
 
-	app.Get("/task/{pageSize:int}/{pageIndex:int}", func(ctx iris.Context) {
+	appCors := configCors()
+	var taskAPI = app.Party("/task", appCors).AllowMethods(iris.MethodOptions)
+
+	taskAPI.Get("/{pageSize:int}/{pageIndex:int}", func(ctx iris.Context) {
 		getTask(ctx, tasksCollection)
 	})
 
-	app.Post("/task", func(ctx iris.Context) {
-		var task dto.Task
-		ctx.ReadJSON(&task)
-		tasksCollection.Insert(&task)
+	taskAPI.Post("", func(ctx iris.Context) {
+		addTask(ctx, tasksCollection)
 	})
 
 	app.Run(iris.Addr(":8080"))
+}
+
+func configCors() context.Handler {
+	return cors.New(cors.Options{
+		AllowCredentials: true,
+		AllowedOrigins:   []string{"*"},
+		AllowedHeaders:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+	})
 }
 
 func getTask(ctx iris.Context, tasksCollection *mgo.Collection) {
@@ -52,7 +58,7 @@ func getTask(ctx iris.Context, tasksCollection *mgo.Collection) {
 
 	var pageSize, _ = ctx.Params().GetInt("pageSize")
 	if pageSize < 1 {
-		pageSize = PAGE_SIZE
+		pageSize = PageSize
 	}
 	var pageIndex, _ = ctx.Params().GetInt("pageIndex")
 	if pageIndex < 1 {
@@ -62,21 +68,32 @@ func getTask(ctx iris.Context, tasksCollection *mgo.Collection) {
 	var quotient, remainder = utils.DivMod(tasksCount, pageSize)
 	var numOfPages = quotient
 	if remainder != 0 {
-		numOfPages += 1
+		numOfPages++
 	}
-	if pageIndex > numOfPages {
-		pageIndex = numOfPages
-	}
-	var numSkip = (pageIndex - 1) * pageSize
-
-	err = tasksCollection.Find(bson.M{}).Limit(pageSize).Skip(numSkip).All(&tasks)
 	var getTaskResult dto.GetTasksActionResult
-	if err != nil {
-		log.Fatal(err)
-		getTaskResult = dto.GetTasksActionResult{IsSucess: false, Message: err.Error()}
+	if numOfPages >= 1 {
+		if pageIndex > numOfPages {
+			pageIndex = numOfPages
+		}
+		var numSkip = (pageIndex - 1) * pageSize
+
+		err = tasksCollection.Find(bson.M{}).Limit(pageSize).Skip(numSkip).All(&tasks)
+
+		if err != nil {
+			log.Fatal(err)
+			getTaskResult = dto.GetTasksActionResult{IsSuccess: false, Message: err.Error()}
+		} else {
+			getTaskResult = dto.GetTasksActionResult{IsSuccess: true, Message: "",
+				Tasks: tasks, NumOfPages: numOfPages, PageIndex: pageIndex}
+		}
 	} else {
-		getTaskResult = dto.GetTasksActionResult{IsSucess: true, Message: "",
-			Tasks: tasks, NumOfPages: numOfPages, PageIndex: pageIndex}
+		getTaskResult = dto.GetTasksActionResult{IsSuccess: true, Message: "No task found", Tasks: []dto.Task{}}
 	}
 	ctx.JSON(getTaskResult)
+}
+
+func addTask(ctx iris.Context, tasksCollection *mgo.Collection) {
+	var task dto.Task
+	ctx.ReadJSON(&task)
+	tasksCollection.Insert(&task)
 }

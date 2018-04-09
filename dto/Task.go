@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-// A Todo represent task and errand
+// A Task represent task and errand
 type Task struct {
 	Name      string
 	Completed bool
