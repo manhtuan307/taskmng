@@ -30,8 +30,8 @@ func main() {
 	appCors := configCors()
 	var taskAPI = app.Party("/task", appCors).AllowMethods(iris.MethodOptions)
 
-	taskAPI.Get("/{pageSize:int}/{pageIndex:int}", func(ctx iris.Context) {
-		getTask(ctx, tasksCollection)
+	taskAPI.Post("/search/{pageSize:int}/{pageIndex:int}", func(ctx iris.Context) {
+		searchTask(ctx, tasksCollection)
 	})
 
 	taskAPI.Post("", func(ctx iris.Context) {
@@ -50,7 +50,19 @@ func configCors() context.Handler {
 	})
 }
 
-func getTask(ctx iris.Context, tasksCollection *mgo.Collection) {
+func searchTask(ctx iris.Context, tasksCollection *mgo.Collection) {
+	var searchRequest dto.SearchTaskRequest
+	ctx.ReadJSON(&searchRequest)
+	log.Print("SearchCondition: ", searchRequest.SearchCondition)
+
+	var searchCondition bson.M
+	if len(searchRequest.SearchCondition) > 0 {
+		var newSearchCondition = "^.*" + searchRequest.SearchCondition + ".*$"
+		searchCondition = bson.M{"name": bson.RegEx{Pattern: newSearchCondition, Options: "i"}}
+	} else {
+		searchCondition = bson.M{}
+	}
+
 	var tasks []dto.Task
 
 	var pageSize, _ = ctx.Params().GetInt("pageSize")
@@ -61,30 +73,29 @@ func getTask(ctx iris.Context, tasksCollection *mgo.Collection) {
 	if pageIndex < 1 {
 		pageIndex = 1
 	}
-	var tasksCount, err = tasksCollection.Find(bson.M{}).Count()
+	var tasksCount, err = tasksCollection.Find(searchCondition).Count()
 	var quotient, remainder = utils.DivMod(tasksCount, pageSize)
 	var numOfPages = quotient
 	if remainder != 0 {
 		numOfPages++
 	}
-	var getTaskResult dto.GetTasksActionResult
+	var getTaskResult dto.SearchTasksActionResult
 	if numOfPages >= 1 {
 		if pageIndex > numOfPages {
 			pageIndex = numOfPages
 		}
 		var numSkip = (pageIndex - 1) * pageSize
-
-		err = tasksCollection.Find(bson.M{}).Limit(pageSize).Skip(numSkip).All(&tasks)
+		err = tasksCollection.Find(searchCondition).Limit(pageSize).Skip(numSkip).All(&tasks)
 
 		if err != nil {
 			log.Fatal(err)
-			getTaskResult = dto.GetTasksActionResult{IsSuccess: false, Message: err.Error()}
+			getTaskResult = dto.SearchTasksActionResult{IsSuccess: false, Message: err.Error()}
 		} else {
-			getTaskResult = dto.GetTasksActionResult{IsSuccess: true, Message: "",
+			getTaskResult = dto.SearchTasksActionResult{IsSuccess: true, Message: "",
 				Tasks: tasks, NumOfPages: numOfPages, PageIndex: pageIndex}
 		}
 	} else {
-		getTaskResult = dto.GetTasksActionResult{IsSuccess: true, Message: "No task found", Tasks: []dto.Task{}}
+		getTaskResult = dto.SearchTasksActionResult{IsSuccess: true, Message: "No task found", Tasks: []dto.Task{}}
 	}
 	ctx.JSON(getTaskResult)
 }
