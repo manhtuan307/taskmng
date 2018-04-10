@@ -9,8 +9,8 @@ import (
 // A Task represent task and errand
 type Task struct {
 	ID      bson.ObjectId `bson:"_id,omitempty"`
-	Name    string
-	Status  string
-	Created time.Time
-	Updated time.Time
+	Name    string        `bson:"name"`
+	Status  string        `bson:"status"`
+	Created time.Time     `bson:"created"`
+	Updated time.Time     `bson:"updated"`
 }

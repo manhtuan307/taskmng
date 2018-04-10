@@ -4,6 +4,7 @@ import (
 	"log"
 	"taskmng/dto"
 	"taskmng/utils"
+	"time"
 
 	"github.com/iris-contrib/middleware/cors"
 	"github.com/kataras/iris"
@@ -40,6 +41,14 @@ func main() {
 
 	taskAPI.Delete("/{taskId:string}", func(ctx iris.Context) {
 		deleteTask(ctx, tasksCollection)
+	})
+
+	taskAPI.Put("/{taskId:string}", func(ctx iris.Context) {
+		updateTask(ctx, tasksCollection)
+	})
+
+	taskAPI.Get("/{taskId:string}", func(ctx iris.Context) {
+		getTask(ctx, tasksCollection)
 	})
 
 	app.Run(iris.Addr(":8080"))
@@ -109,7 +118,13 @@ func addTask(ctx iris.Context, tasksCollection *mgo.Collection) {
 	ctx.ReadJSON(&task)
 	task.ID = bson.NewObjectId()
 	log.Print("Adding task: ", task)
-	tasksCollection.Insert(&task)
+	err := tasksCollection.Insert(&task)
+	if err != nil {
+		log.Print("Adding Fail: ", err)
+		panic(err)
+	}
+	var result = dto.ActionResult{IsSuccess: true, Message: ""}
+	ctx.JSON(result)
 }
 
 func deleteTask(ctx iris.Context, tasksCollection *mgo.Collection) {
@@ -119,6 +134,39 @@ func deleteTask(ctx iris.Context, tasksCollection *mgo.Collection) {
 		err := tasksCollection.Remove(bson.M{"_id": bson.ObjectIdHex(taskID)})
 		if err != nil {
 			log.Print("Deleting fail: ", err)
+			panic(err)
 		}
 	}
+}
+
+func getTask(ctx iris.Context, tasksCollection *mgo.Collection) {
+	var task dto.Task
+	var taskID = ctx.Params().Get("taskId")
+	if len(taskID) > 0 {
+		log.Print("Fetching task: ", taskID)
+		err := tasksCollection.Find(bson.M{"_id": bson.ObjectIdHex(taskID)}).One(&task)
+		if err != nil {
+			log.Print("Error: ", err)
+			panic(err)
+		}
+	}
+	ctx.JSON(task)
+}
+
+func updateTask(ctx iris.Context, tasksCollection *mgo.Collection) {
+	var updatedTask dto.Task
+	ctx.ReadJSON(&updatedTask)
+	var taskID = ctx.Params().Get("taskId")
+	if len(taskID) > 0 {
+		log.Print("Updating task: ", taskID)
+		var query = bson.M{"_id": bson.ObjectIdHex(taskID)}
+		var change = bson.M{"$set": bson.M{"name": updatedTask.Name, "status": updatedTask.Status, "updated": time.Now()}}
+		err := tasksCollection.Update(query, change)
+		if err != nil {
+			log.Print("Error: ", err)
+			panic(err)
+		}
+	}
+	var result = dto.ActionResult{IsSuccess: true, Message: ""}
+	ctx.JSON(result)
 }
