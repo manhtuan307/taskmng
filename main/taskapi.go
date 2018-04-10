@@ -38,6 +38,10 @@ func main() {
 		addTask(ctx, tasksCollection)
 	})
 
+	taskAPI.Delete("/{taskId:string}", func(ctx iris.Context) {
+		deleteTask(ctx, tasksCollection)
+	})
+
 	app.Run(iris.Addr(":8080"))
 }
 
@@ -103,5 +107,18 @@ func searchTask(ctx iris.Context, tasksCollection *mgo.Collection) {
 func addTask(ctx iris.Context, tasksCollection *mgo.Collection) {
 	var task dto.Task
 	ctx.ReadJSON(&task)
+	task.ID = bson.NewObjectId()
+	log.Print("Adding task: ", task)
 	tasksCollection.Insert(&task)
+}
+
+func deleteTask(ctx iris.Context, tasksCollection *mgo.Collection) {
+	var taskID = ctx.Params().Get("taskId")
+	if len(taskID) > 0 {
+		log.Print("Deleting task: ", taskID)
+		err := tasksCollection.Remove(bson.M{"_id": bson.ObjectIdHex(taskID)})
+		if err != nil {
+			log.Print("Deleting fail: ", err)
+		}
+	}
 }

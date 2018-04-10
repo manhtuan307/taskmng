@@ -2,12 +2,15 @@ package dto
 
 import (
 	"time"
+
+	"gopkg.in/mgo.v2/bson"
 )
 
 // A Task represent task and errand
 type Task struct {
-	Name      string
-	Completed bool
-	Created   time.Time
-	Updated   time.Time
+	ID      bson.ObjectId `bson:"_id,omitempty"`
+	Name    string
+	Status  string
+	Created time.Time
+	Updated time.Time
 }
