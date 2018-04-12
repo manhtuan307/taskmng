@@ -24,13 +24,16 @@ const AppSecret = "TaskManagementSecret2018"
 const TokenValidPeriodInMinutes = 120
 
 // ClaimAppID - app id
-const ClaimAppID = "appID"
+const ClaimAppID = "AppID"
+
+// ClaimUserID - user ID
+const ClaimUserID = "UserID"
 
 // ClaimEmail - email
-const ClaimEmail = "email"
+const ClaimEmail = "Email"
 
 // ClaimExpiredTime - expired time
-const ClaimExpiredTime = "expiredTime"
+const ClaimExpiredTime = "ExpiredTime"
 
 // ClaimTimeFormat - claim time format
 const ClaimTimeFormat = time.RFC3339

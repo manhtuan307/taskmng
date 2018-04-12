@@ -41,6 +41,7 @@ func login(ctx iris.Context) {
 			var expiredTime = time.Now().Add(TokenValidPeriodInMinutes * time.Minute)
 			log.Print("Expired Time: ", expiredTime.Format(time.RFC3339))
 			token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+				ClaimUserID:      user.ID.Hex(),
 				ClaimEmail:       user.Email,
 				ClaimAppID:       ApplicationID,
 				ClaimExpiredTime: expiredTime,
@@ -48,7 +49,9 @@ func login(ctx iris.Context) {
 
 			// Sign and get the complete encoded token as a string using the secret
 			tokenString, _ := token.SignedString([]byte(AppSecret))
-			result = dto.LoginResult{IsSuccess: true, Message: ("Welcome: " + user.Email), Token: tokenString}
+			result = dto.LoginResult{IsSuccess: true, Message: ("Welcome: " + user.Email),
+				Token: tokenString, ExpiredTime: expiredTime.Format(time.RFC3339),
+				UserID: user.ID.Hex()}
 		} else {
 			result = dto.LoginResult{IsSuccess: false, Message: "User status is not active"}
 		}
