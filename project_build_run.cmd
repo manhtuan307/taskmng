@@ -3,3 +3,4 @@ go install taskmng/dto
 go build taskmng/dataaccess
 go install taskmng/dataaccess
 go build taskmng/main
+main.exe
