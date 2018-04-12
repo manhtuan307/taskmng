@@ -62,3 +62,23 @@ func login(ctx iris.Context) {
 
 	ctx.JSON(result)
 }
+
+func signup(ctx iris.Context) {
+	var registraionInfo dto.RegistrationInfo
+	ctx.ReadJSON(&registraionInfo)
+	var result dto.ActionResult
+	if registraionInfo.Email != "" && registraionInfo.Password != "" &&
+		registraionInfo.Password == registraionInfo.ConfirmPassword {
+
+		var user, err = dataaccess.Register(registraionInfo.Email, registraionInfo.Password)
+		if err == nil {
+			//TODO: send mail
+			result = dto.ActionResult{IsSuccess: true, Message: "Thank you for your registration. Please check verification email to verify your email address"}
+		} else {
+			result = dto.ActionResult{IsSuccess: false, Message: err.Error()}
+		}
+	} else {
+		result = dto.ActionResult{IsSuccess: false, Message: "Registration information is invalid"}
+	}
+	ctx.JSON(result)
+}
