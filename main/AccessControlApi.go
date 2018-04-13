@@ -7,6 +7,8 @@ import (
 	"taskmng/utils"
 	"time"
 
+	"net/url"
+
 	jwt "github.com/dgrijalva/jwt-go"
 	jwtmiddleware "github.com/iris-contrib/middleware/jwt"
 	"github.com/kataras/iris"
@@ -101,10 +103,13 @@ func verifyEmail(ctx iris.Context) {
 }
 
 func sendConfirmMail(user dto.User) {
-	var verifyLink = "http://174.16.10.107/taskmng/verifyRegistration.html?email=" + user.Email + "&code=" + user.ActivationCode
+	var verifyLink = "http://174.16.10.107/taskmng/verifyRegistration.html?email=" + encodeURLParam(user.Email) + "&code=" + encodeURLParam(user.ActivationCode)
 	var content = "Dear Sir/Madam. Thank you for your registration." +
 		"Please click the following link bellow to verify your email for Task Management registration: " +
 		verifyLink
-	utils.SendMailSSL(user.Email, "Registration Verification", content)
-	//utils.SendMailToOne(user.Email, content)
+	utils.SendMailToOne(user.Email, "Registration Verification", content)
+}
+
+func encodeURLParam(paramValue string) string {
+	return (&url.URL{Path: paramValue}).String()
 }

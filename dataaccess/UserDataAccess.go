@@ -37,11 +37,13 @@ func VerifyRegistration(email string, verifyCode string) error {
 	if err == nil {
 		if user.ActivationCode == verifyCode {
 			if user.Status == dto.UserStatusInactive {
-				var query = bson.M{"_id": user.ID.Hex}
+				log.Print("Going to activate user: ", user.ID.Hex())
+				var query = bson.M{"_id": user.ID}
 				var change = bson.M{"$set": bson.M{"status": dto.UserStatusActive}}
 				err := usersCollection.Update(query, change)
 				if err != nil {
 					log.Print("Error: ", err)
+					panic(err)
 				}
 			} else {
 				panic("Registration has already confirm")
