@@ -70,6 +70,7 @@ func signup(ctx iris.Context) {
 	var result dto.ActionResult
 	if registraionInfo.Email != "" && registraionInfo.Password != "" {
 		if registraionInfo.Password == registraionInfo.ConfirmPassword {
+			log.Print("Doing registration for: ", registraionInfo.Email)
 			var user, err = dataaccess.Register(registraionInfo.Email, registraionInfo.Password)
 			if err == nil {
 				sendConfirmMail(user)
@@ -104,5 +105,6 @@ func sendConfirmMail(user dto.User) {
 	var content = "Dear Sir/Madam. Thank you for your registration." +
 		"Please click the following link bellow to verify your email for Task Management registration: " +
 		verifyLink
-	utils.SendMailToOne(user.Email, content)
+	utils.SendMailSSL(user.Email, "Registration Verification", content)
+	//utils.SendMailToOne(user.Email, content)
 }

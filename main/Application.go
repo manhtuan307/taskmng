@@ -1,6 +1,7 @@
 package main
 
 import (
+	"taskmng/utils"
 	"taskmng/dataaccess"
 
 	"github.com/iris-contrib/middleware/cors"
@@ -16,6 +17,7 @@ func main() {
 	app := iris.New()
 	app.Use(logger.New())
 	dataaccess.InitDbContext()
+	utils.InitMailSettings()
 	defer dataaccess.TerminateDbContext()
 
 	jwtMiddleware = jwtmiddleware.New(jwtmiddleware.Config{
