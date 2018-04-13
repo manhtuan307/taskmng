@@ -30,6 +30,7 @@ func main() {
 	var authAPI = app.Party("/auth", appCors).AllowMethods(iris.MethodOptions)
 	authAPI.Post("/login", login)
 	authAPI.Post("/signup", signup)
+	authAPI.Post("/verify", verifyEmail)
 
 	// register all tasks API - using jwt token for authentication
 	var taskAPI = app.Party("/task", appCors).AllowMethods(iris.MethodOptions)
