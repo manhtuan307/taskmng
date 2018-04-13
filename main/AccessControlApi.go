@@ -21,11 +21,13 @@ func authenticationHandler(ctx iris.Context) {
 	if claims, ok := userToken.Claims.(jwt.MapClaims); ok && userToken.Valid {
 		var appID = claims[ClaimAppID].(string)
 		var email = claims[ClaimEmail].(string)
+		var userID = claims[ClaimUserID].(string)
 		var expiredTime, err = time.Parse(ClaimTimeFormat, claims[ClaimExpiredTime].(string))
 		log.Print("Current Time: ", time.Now().Format(time.RFC3339))
 		log.Print("Token Expired Time: ", expiredTime.Format(time.RFC3339))
 		if appID == ApplicationID && err == nil && expiredTime.After(time.Now()) {
 			log.Println("User: ", email, " is valid for executing action")
+			ctx.Values().Set("UserID", userID)
 			ctx.Next()
 		}
 	}

@@ -5,6 +5,8 @@ import (
 	"taskmng/dataaccess"
 	"taskmng/dto"
 
+	"gopkg.in/mgo.v2/bson"
+
 	"github.com/kataras/iris"
 )
 
@@ -34,6 +36,8 @@ func searchTask(ctx iris.Context) {
 func addTask(ctx iris.Context) {
 	var task dto.Task
 	ctx.ReadJSON(&task)
+	var userID = ctx.Values().GetString("UserID")
+	task.UserID = bson.ObjectIdHex(userID)
 	dataaccess.AddTask(task)
 	var result = dto.ActionResult{IsSuccess: true, Message: ""}
 	ctx.JSON(result)
@@ -41,8 +45,9 @@ func addTask(ctx iris.Context) {
 
 func deleteTask(ctx iris.Context) {
 	var taskID = ctx.Params().Get("taskId")
+	var userID = ctx.Values().GetString("UserID")
 	if len(taskID) > 0 {
-		dataaccess.DeleteTask(taskID)
+		dataaccess.DeleteTask(taskID, userID)
 	}
 }
 
@@ -55,9 +60,10 @@ func getTask(ctx iris.Context) {
 func updateTask(ctx iris.Context) {
 	var updatedTask dto.Task
 	ctx.ReadJSON(&updatedTask)
+	var userID = ctx.Values().GetString("UserID")
 	var taskID = ctx.Params().Get("taskId")
 	if len(taskID) > 0 {
-		dataaccess.UpdateTask(updatedTask, taskID)
+		dataaccess.UpdateTask(updatedTask, taskID, userID)
 	}
 	var result = dto.ActionResult{IsSuccess: true, Message: ""}
 	ctx.JSON(result)

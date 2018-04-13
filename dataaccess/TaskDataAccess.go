@@ -10,14 +10,17 @@ import (
 )
 
 //UpdateTask - update a task
-func UpdateTask(updatedTask dto.Task, taskID string) {
+func UpdateTask(updatedTask dto.Task, taskID string, userID string) {
 	if len(taskID) > 0 {
 		log.Print("Updating task: ", taskID)
-		var query = bson.M{"_id": bson.ObjectIdHex(taskID)}
+		var query = bson.M{
+			"_id":    bson.ObjectIdHex(taskID),
+			"userID": bson.ObjectIdHex(userID),
+		}
 		var change = bson.M{"$set": bson.M{"name": updatedTask.Name, "status": updatedTask.Status, "updated": time.Now()}}
 		err := tasksCollection.Update(query, change)
 		if err != nil {
-			log.Print("Error: ", err)
+			log.Print("Updating Fail: ", err)
 			panic(err)
 		}
 	}
@@ -38,10 +41,13 @@ func GetTask(taskID string) dto.Task {
 }
 
 //DeleteTask - delete task by its Id
-func DeleteTask(taskID string) {
+func DeleteTask(taskID string, userID string) {
 	if len(taskID) > 0 {
 		log.Print("Deleting task: ", taskID)
-		err := tasksCollection.Remove(bson.M{"_id": bson.ObjectIdHex(taskID)})
+		err := tasksCollection.Remove(bson.M{
+			"_id":    bson.ObjectIdHex(taskID),
+			"userID": bson.ObjectIdHex(userID),
+		})
 		if err != nil {
 			log.Print("Deleting fail: ", err)
 			panic(err)
