@@ -28,3 +28,7 @@ const ClaimExpiredTime = "ExpiredTime"
 
 // ClaimTimeFormat - claim time format
 const ClaimTimeFormat = time.RFC3339
+
+// WebBaseUrl - website base url
+//const WebBaseUrl = "http://174.16.10.107/taskmng"
+const WebBaseUrl = "http://localhost/taskmng"

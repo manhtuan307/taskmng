@@ -1,8 +1,8 @@
 package main
 
 import (
-	"taskmng/utils"
 	"taskmng/dataaccess"
+	"taskmng/utils"
 
 	"github.com/iris-contrib/middleware/cors"
 	"github.com/kataras/iris"
@@ -33,6 +33,10 @@ func main() {
 	authAPI.Post("/login", login)
 	authAPI.Post("/signup", signup)
 	authAPI.Post("/verify", verifyEmail)
+
+	var userAPI = app.Party("/user", appCors).AllowMethods(iris.MethodOptions)
+	userAPI.Use(jwtMiddleware.Serve)
+	userAPI.Put("/password", authenticationHandler, changePassword)
 
 	// register all tasks API - using jwt token for authentication
 	var taskAPI = app.Party("/task", appCors).AllowMethods(iris.MethodOptions)

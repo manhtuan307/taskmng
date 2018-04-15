@@ -12,6 +12,7 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 	jwtmiddleware "github.com/iris-contrib/middleware/jwt"
 	"github.com/kataras/iris"
+	"gopkg.in/mgo.v2/bson"
 )
 
 var jwtMiddleware *jwtmiddleware.Middleware
@@ -105,7 +106,7 @@ func verifyEmail(ctx iris.Context) {
 }
 
 func sendConfirmMail(user dto.User) {
-	var verifyLink = "http://174.16.10.107/taskmng/verifyRegistration.html?email=" + encodeURLParam(user.Email) + "&code=" + encodeURLParam(user.ActivationCode)
+	var verifyLink = WebBaseUrl + "/verifyRegistration.html?email=" + encodeURLParam(user.Email) + "&code=" + encodeURLParam(user.ActivationCode)
 	var content = "Dear Sir/Madam. Thank you for your registration." +
 		"Please click the following link bellow to verify your email for Task Management registration: " +
 		verifyLink
@@ -114,4 +115,24 @@ func sendConfirmMail(user dto.User) {
 
 func encodeURLParam(paramValue string) string {
 	return (&url.URL{Path: paramValue}).String()
+}
+
+func changePassword(ctx iris.Context) {
+	var changePassRequest dto.ChangePasswordRequest
+	ctx.ReadJSON(&changePassRequest)
+	var result dto.ActionResult
+	if len(changePassRequest.Password) > 0 &&
+		changePassRequest.Password == changePassRequest.ConfirmPassword {
+
+		var userID = bson.ObjectIdHex(ctx.Values().GetString("UserID"))
+		err := dataaccess.ChangePassword(userID, changePassRequest.Password)
+		if err == nil {
+			result = dto.ActionResult{IsSuccess: true, Message: "Change Password successfully"}
+		} else {
+			result = dto.ActionResult{IsSuccess: false, Message: err.Error()}
+		}
+	} else {
+		result = dto.ActionResult{IsSuccess: false, Message: "Password and ConfirmPassword mismatch"}
+	}
+	ctx.JSON(result)
 }
