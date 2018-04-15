@@ -33,6 +33,7 @@ func main() {
 	authAPI.Post("/login", login)
 	authAPI.Post("/signup", signup)
 	authAPI.Post("/verify", verifyEmail)
+	authAPI.Post("/forgetpassword", forgetPassword)
 
 	var userAPI = app.Party("/user", appCors).AllowMethods(iris.MethodOptions)
 	userAPI.Use(jwtMiddleware.Serve)

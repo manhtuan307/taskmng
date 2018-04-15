@@ -105,6 +105,19 @@ func verifyEmail(ctx iris.Context) {
 	ctx.JSON(result)
 }
 
+func forgetPassword(ctx iris.Context) {
+	var verifyInfo dto.EmailVerificationInfo
+	ctx.ReadJSON(&verifyInfo)
+	var result dto.ActionResult
+	err := dataaccess.VerifyRegistration(verifyInfo.Email, verifyInfo.VerifyCode)
+	if err == nil {
+		result = dto.ActionResult{IsSuccess: true, Message: "Email has been verified"}
+	} else {
+		result = dto.ActionResult{IsSuccess: false, Message: err.Error()}
+	}
+	ctx.JSON(result)
+}
+
 func sendConfirmMail(user dto.User) {
 	var verifyLink = WebBaseUrl + "/verifyRegistration.html?email=" + encodeURLParam(user.Email) + "&code=" + encodeURLParam(user.ActivationCode)
 	var content = "Dear Sir/Madam. Thank you for your registration." +
