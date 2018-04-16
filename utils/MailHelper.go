@@ -10,9 +10,9 @@ var config mailer.Config
 func InitMailSettings() {
 	config = mailer.Config{
 		Host:       "smtp.gmail.com",
-		Username:   "minhnha30",
-		Password:   "TenLao307",
-		FromAddr:   "minhnha30@gmail.com",
+		Username:   "appchecker1988",
+		Password:   "TryIt307",
+		FromAddr:   "appchecker1988@gmail.com",
 		Port:       587,
 		UseCommand: false,
 	}
