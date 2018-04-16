@@ -74,6 +74,16 @@ func ChangePassword(userID bson.ObjectId, newPassword string) error {
 	return err
 }
 
+//GetUserByID - get user by its ID
+func GetUserByID(userID bson.ObjectId) (dto.User, error) {
+	var user dto.User
+	err := usersCollection.Find(bson.M{"_id": userID}).One(&user)
+	if err != nil {
+		log.Print("Error: ", err)
+	}
+	return user, err
+}
+
 //GetUserByEmail - get user via its email
 func GetUserByEmail(email string) (dto.User, error) {
 	var user dto.User

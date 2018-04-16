@@ -33,11 +33,12 @@ func main() {
 	authAPI.Post("/login", login)
 	authAPI.Post("/signup", signup)
 	authAPI.Post("/verify", verifyEmail)
-	authAPI.Post("/resetpassword", resetpassword)
+	authAPI.Post("/password/forget", forgetPassword)
 
 	var userAPI = app.Party("/user", appCors).AllowMethods(iris.MethodOptions)
 	userAPI.Use(jwtMiddleware.Serve)
-	userAPI.Put("/password", authenticationHandler, changePassword)
+	userAPI.Put("/password/change", authenticationHandler, changePassword)
+	userAPI.Put("/password/reset", authenticationHandler, resetPassword)
 
 	// register all tasks API - using jwt token for authentication
 	var taskAPI = app.Party("/task", appCors).AllowMethods(iris.MethodOptions)

@@ -95,7 +95,55 @@ func verifyEmail(ctx iris.Context) {
 	ctx.JSON(result)
 }
 
-func resetpassword(ctx iris.Context) {
+func changePassword(ctx iris.Context) {
+	var changePassRequest dto.ChangePasswordRequest
+	ctx.ReadJSON(&changePassRequest)
+	var result dto.ActionResult
+	if len(changePassRequest.Password) > 0 &&
+		changePassRequest.Password == changePassRequest.ConfirmPassword {
+
+		var userID = bson.ObjectIdHex(ctx.Values().GetString("UserID"))
+		user, err := dataaccess.GetUserByID(userID)
+		if err == nil {
+			if user.Password == changePassRequest.OldPassword {
+				err = dataaccess.ChangePassword(userID, changePassRequest.Password)
+				if err == nil {
+					result = dto.ActionResult{IsSuccess: true, Message: "Change Password successfully"}
+				} else {
+					result = dto.ActionResult{IsSuccess: false, Message: err.Error()}
+				}
+			} else {
+				result = dto.ActionResult{IsSuccess: false, Message: "Old Password is incorrect"}
+			}
+		} else {
+			result = dto.ActionResult{IsSuccess: false, Message: err.Error()}
+		}
+	} else {
+		result = dto.ActionResult{IsSuccess: false, Message: "Password and ConfirmPassword mismatch"}
+	}
+	ctx.JSON(result)
+}
+
+func resetPassword(ctx iris.Context) {
+	var resetPassInfo dto.ResetPasswordInfo
+	ctx.ReadJSON(&resetPassInfo)
+	var result dto.ActionResult
+	if len(resetPassInfo.Password) > 0 &&
+		resetPassInfo.Password == resetPassInfo.ConfirmPassword {
+		var userID = bson.ObjectIdHex(ctx.Values().GetString("UserID"))
+		err := dataaccess.ChangePassword(userID, resetPassInfo.Password)
+		if err == nil {
+			result = dto.ActionResult{IsSuccess: true, Message: "Change Password successfully"}
+		} else {
+			result = dto.ActionResult{IsSuccess: false, Message: err.Error()}
+		}
+	} else {
+		result = dto.ActionResult{IsSuccess: false, Message: "Password and ConfirmPassword mismatch"}
+	}
+	ctx.JSON(result)
+}
+
+func forgetPassword(ctx iris.Context) {
 	var requestInfo dto.ResetPasswordRequest
 	ctx.ReadJSON(&requestInfo)
 	var result dto.ActionResult
@@ -105,26 +153,6 @@ func resetpassword(ctx iris.Context) {
 		result = dto.ActionResult{IsSuccess: true, Message: "An email has been sent to help you reset your password"}
 	} else {
 		result = dto.ActionResult{IsSuccess: false, Message: err.Error()}
-	}
-	ctx.JSON(result)
-}
-
-func changePassword(ctx iris.Context) {
-	var changePassRequest dto.ChangePasswordRequest
-	ctx.ReadJSON(&changePassRequest)
-	var result dto.ActionResult
-	if len(changePassRequest.Password) > 0 &&
-		changePassRequest.Password == changePassRequest.ConfirmPassword {
-
-		var userID = bson.ObjectIdHex(ctx.Values().GetString("UserID"))
-		err := dataaccess.ChangePassword(userID, changePassRequest.Password)
-		if err == nil {
-			result = dto.ActionResult{IsSuccess: true, Message: "Change Password successfully"}
-		} else {
-			result = dto.ActionResult{IsSuccess: false, Message: err.Error()}
-		}
-	} else {
-		result = dto.ActionResult{IsSuccess: false, Message: "Password and ConfirmPassword mismatch"}
 	}
 	ctx.JSON(result)
 }
@@ -154,7 +182,7 @@ func sendConfirmMail(user dto.User) {
 
 func sendResetPasswordMail(user dto.User) {
 	var token, _ = generateToken(user)
-	var resetPasswordLink = WebBaseUrl + "/changePassword.html?token=" + encodeURLParam(token)
+	var resetPasswordLink = WebBaseUrl + "/resetPassword.html?token=" + encodeURLParam(token)
 	var content = "Dear Sir/Madam. We've received a request to reset your password." +
 		"If that is your request, kindly use the following url for resetting password in Task Management." +
 		"Please take note that this url is valid within 2 hours." +
