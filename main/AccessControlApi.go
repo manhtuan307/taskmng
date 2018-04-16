@@ -44,17 +44,7 @@ func login(ctx iris.Context) {
 		if user.Status == dto.UserStatusActive {
 			log.Print("Login credentials are valid. Going to generate token")
 			log.Print("Current Time: ", time.Now().Format(time.RFC3339))
-			var expiredTime = time.Now().Add(TokenValidPeriodInMinutes * time.Minute)
-			log.Print("Expired Time: ", expiredTime.Format(time.RFC3339))
-			token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-				ClaimUserID:      user.ID.Hex(),
-				ClaimEmail:       user.Email,
-				ClaimAppID:       ApplicationID,
-				ClaimExpiredTime: expiredTime,
-			})
-
-			// Sign and get the complete encoded token as a string using the secret
-			tokenString, _ := token.SignedString([]byte(AppSecret))
+			tokenString, expiredTime := generateToken(user)
 			result = dto.LoginResult{IsSuccess: true, Message: ("Welcome: " + user.Email),
 				Token: tokenString, ExpiredTime: expiredTime.Format(time.RFC3339),
 				UserID: user.ID.Hex()}
@@ -105,29 +95,18 @@ func verifyEmail(ctx iris.Context) {
 	ctx.JSON(result)
 }
 
-func forgetPassword(ctx iris.Context) {
-	var verifyInfo dto.EmailVerificationInfo
-	ctx.ReadJSON(&verifyInfo)
+func resetpassword(ctx iris.Context) {
+	var requestInfo dto.ResetPasswordRequest
+	ctx.ReadJSON(&requestInfo)
 	var result dto.ActionResult
-	err := dataaccess.VerifyRegistration(verifyInfo.Email, verifyInfo.VerifyCode)
+	user, err := dataaccess.GetUserByEmail(requestInfo.Email)
 	if err == nil {
-		result = dto.ActionResult{IsSuccess: true, Message: "Email has been verified"}
+		sendResetPasswordMail(user)
+		result = dto.ActionResult{IsSuccess: true, Message: "An email has been sent to help you reset your password"}
 	} else {
 		result = dto.ActionResult{IsSuccess: false, Message: err.Error()}
 	}
 	ctx.JSON(result)
-}
-
-func sendConfirmMail(user dto.User) {
-	var verifyLink = WebBaseUrl + "/verifyRegistration.html?email=" + encodeURLParam(user.Email) + "&code=" + encodeURLParam(user.ActivationCode)
-	var content = "Dear Sir/Madam. Thank you for your registration." +
-		"Please click the following link bellow to verify your email for Task Management registration: " +
-		verifyLink
-	utils.SendMailToOne(user.Email, "Registration Verification", content)
-}
-
-func encodeURLParam(paramValue string) string {
-	return (&url.URL{Path: paramValue}).String()
 }
 
 func changePassword(ctx iris.Context) {
@@ -148,4 +127,41 @@ func changePassword(ctx iris.Context) {
 		result = dto.ActionResult{IsSuccess: false, Message: "Password and ConfirmPassword mismatch"}
 	}
 	ctx.JSON(result)
+}
+
+func generateToken(user dto.User) (string, time.Time) {
+	var expiredTime = time.Now().Add(TokenValidPeriodInMinutes * time.Minute)
+	log.Print("Expired Time: ", expiredTime.Format(time.RFC3339))
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		ClaimUserID:      user.ID.Hex(),
+		ClaimEmail:       user.Email,
+		ClaimAppID:       ApplicationID,
+		ClaimExpiredTime: expiredTime,
+	})
+
+	// Sign and get the complete encoded token as a string using the secret
+	tokenString, _ := token.SignedString([]byte(AppSecret))
+	return tokenString, expiredTime
+}
+
+func sendConfirmMail(user dto.User) {
+	var verifyLink = WebBaseUrl + "/verifyRegistration.html?email=" + encodeURLParam(user.Email) + "&code=" + encodeURLParam(user.ActivationCode)
+	var content = "Dear Sir/Madam. Thank you for your registration." +
+		"Please click the following link bellow to verify your email for Task Management registration: " +
+		verifyLink
+	utils.SendMailToOne(user.Email, "Registration Verification", content)
+}
+
+func sendResetPasswordMail(user dto.User) {
+	var token, _ = generateToken(user)
+	var resetPasswordLink = WebBaseUrl + "/changePassword.html?token=" + encodeURLParam(token)
+	var content = "Dear Sir/Madam. We've received a request to reset your password." +
+		"If that is your request, kindly use the following url for resetting password in Task Management." +
+		"Please take note that this url is valid within 2 hours." +
+		resetPasswordLink
+	utils.SendMailToOne(user.Email, "Reset Password", content)
+}
+
+func encodeURLParam(paramValue string) string {
+	return (&url.URL{Path: paramValue}).String()
 }

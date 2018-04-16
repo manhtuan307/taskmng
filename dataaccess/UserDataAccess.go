@@ -55,12 +55,13 @@ func VerifyRegistration(email string, verifyCode string) error {
 	return err
 }
 
-func ChangePassword(userId bson.ObjectId, newPassword string) error {
+//ChangePassword - change password for user
+func ChangePassword(userID bson.ObjectId, newPassword string) error {
 	var user dto.User
-	err := usersCollection.Find(bson.M{"_id": userId}).One(&user)
+	err := usersCollection.Find(bson.M{"_id": userID}).One(&user)
 	if err == nil {
-		var query = bson.M{"_id": userId}
-		var change = bson.M{"$set": bson.M{"Password": newPassword}}
+		var query = bson.M{"_id": userID}
+		var change = bson.M{"$set": bson.M{"password": newPassword}}
 		err := usersCollection.Update(query, change)
 		if err != nil {
 			log.Print("Error: ", err)
@@ -71,4 +72,15 @@ func ChangePassword(userId bson.ObjectId, newPassword string) error {
 		panic(err)
 	}
 	return err
+}
+
+//GetUserByEmail - get user via its email
+func GetUserByEmail(email string) (dto.User, error) {
+	var user dto.User
+	err := usersCollection.Find(bson.M{"email": email}).One(&user)
+	if err != nil {
+		log.Print("Error: ", err)
+		panic(err)
+	}
+	return user, err
 }
